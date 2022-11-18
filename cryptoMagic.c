@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#define encrypt1 //if defined encryption is on
+//#define encrypt2
+#define formatTest //Test format change without ASCII shuffle
 
 FILE *file_read; // pointers for files
 FILE *file_write;
@@ -39,7 +42,7 @@ int main(int argc, char *argv[])
 ///////////ENCRYPTION///////////////
 void encrypt(char file_name[], int n)
 {
-    char line[120]; // lines 120 characters each
+    unsigned char line[300]; // lines 120 characters each
 
     char file_name_write[50]={}; //name of file to write
     char type[] = "crp"; //extension to be attatched
@@ -57,21 +60,8 @@ void encrypt(char file_name[], int n)
         // printf("%c\n",line[0]);//Testing
 
         // printf("String length:%d\n",strlen(line));//Testing
-
-        for (int i = 0; i < strlen(line); i++)//This loop selects and modifies input stream
-        { // check each character of line for encryption needs  //Added int because that's what strleng returns and there was an error
-            if ((line[i] == 9) || (line[i] == 13) || (line[i] == 10))
-            {
-                //don't encrypt tabs ASCII 9 or Carriage Returns ASCII 13 or LF ASCII 10
-            }
-            else
-            {
-                line[i] -= 16; // take ASCII code and subtract 16
-                if (line[i] < 32)
-                    line[i] = (line[i] - 32) + 144; // if resulting character is less than 32, subtract 32, add 144
-            }
-        }
-
+        
+        
         for (int i = 0; i < strlen(line); i++)//This loops selects and prints output stream
         {
             if ((line[i] == 13) || (line[i] == 10))
@@ -87,9 +77,28 @@ void encrypt(char file_name[], int n)
             }
 
             else
-            {                                        // Print the rest in hex
-                printf("%2X", line[i]);              // Test //Need to use array[] because X is not a string
-                fprintf(file_write, "%2X", line[i]); // formated print to file, formated capital hex 2 char, from line
+            {   
+                #ifdef encrypt1//turn on and off encryption 1 for testing
+                    #ifdef formatTest
+                        line[i] -= 16; // take ASCII code and subtract 16
+                        if (line[i] < 32)
+                            line[i] += 112; // if resulting character is less than 32, subtract 32, add 144
+                    #endif
+                    printf("%2X", line[i]);              // Test //Need to use array[] because X is not a string
+                    fprintf(file_write, "%2X", line[i]); // formated print to file, formated capital hex 2 char, from line
+                #endif
+
+                #ifdef encrypt2
+                unsigned char chr = line[i]; // FIXED IT!!!! we just needed to add "unsigned" infront of char and this fixes the whole problem.
+                chr -= 16;
+                if(chr < 32) {
+                   chr += 112;
+                }  
+                                                  // Print the rest in hex
+                printf("%2X", chr);              // Test //Need to use array[] because X is not a string
+                fprintf(file_write, "%2X", chr); // formated print to file, formated capital hex 2 char, from line
+                #endif 
+                
             }
         }
         printf("\n");
@@ -104,10 +113,11 @@ void encrypt(char file_name[], int n)
 ///////////DECRYPTION///////////////
 void decrypt(char file_name[], int n)
 {
-    char encrypt_line[255]={};
-    char decrypt_line[126]={};
+    unsigned char encrypt_line[255]={};//changed to unsigned
+    unsigned char decrypt_line[126]={};
+    
 
-    char file_name_write[50]={}; //name of file to write initialize to zero or wack shit happens
+    char file_name_write[50]={}; //name of file to write initialize to zero 
     char type[] = "txt"; //extension to be attatched
     memcpy(file_name_write,file_name,(n-3)); //Copy the file name with out the file type
     strcat(file_name_write,type);//string catenate function links strings, adds file type
@@ -147,19 +157,22 @@ void decrypt(char file_name[], int n)
                 decrypt_line[j]= hex1 * 16 + hex2;//covert two hex characters to a single integer
                 //printf("decrypt line input: %d\n",decrypt_line[j]);//Testing
 
+                #ifdef formatTest //turn off encryption1 for testing
+                decrypt_line[j]+=16;
                 if (decrypt_line[j] > 127)
                     decrypt_line[j] = (decrypt_line[j]-144) + 32; //decryption shuffle the ascii table    
-                     
+                #endif     
             }         
         }
         
-        printf("\ndecrypt line input: %s\n",decrypt_line);//Testing
-        
-        for(int i=0;i<strlen(decrypt_line);i++)
-        {
-            fprintf(file_write, "%c",decrypt_line[i]);    
-        }
+    printf("\ndecrypt line input: %s\n",decrypt_line);//Testing
     
+    for(int i=0;i<strlen(decrypt_line);i++)
+    {
+        fprintf(file_write, "%c",decrypt_line[i]);    
+    }
+    
+        
     }
     fclose(file_read);//close files
     fclose(file_write);
